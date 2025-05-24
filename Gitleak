@@ -1,0 +1,24 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    echo "Installing Gitleaks..."
+    curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+    chmod +x gitleaks
+    sudo mv gitleaks /usr/local/bin/gitleaks
+  displayName: 'Install Gitleaks'
+
+- script: |
+    echo "Running Gitleaks..."
+    gitleaks detect --source . --report-path gitleaks-report.json --exit-code 1
+  displayName: 'Scan for Secrets with Gitleaks'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: 'gitleaks-report.json'
+    artifactName: 'GitleaksReport'
+  condition: always()
