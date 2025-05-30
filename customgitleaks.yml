@@ -56,15 +56,6 @@ steps:
 # Optional simple email notification example:
 #- script: |
      #if grep -q '"RuleID"' $(REPORT_PATH); then
-      # echo "Secrets found in pipeline!" | mail -s "Gitleaks Alert" mik.sengupta@gmail.com
+      # echo "Secrets found in pipeline!" | mail -s "Gitleaks Alert" xyz@abc.com
      #fi
   #displayName: 'Send Email Alert (on secrets)'
-
-- bash: |
-    if grep -q '"RuleID"' "$(REPORT_PATH)"; then
-      echo "Secrets found in pipeline!" | mail -s "Gitleaks Alert" mik.sengupta@gmail.com
-    else
-      echo "No secrets found."
-    fi
-  displayName: 'Send email alert if secrets found'
-
