@@ -1,0 +1,52 @@
+trigger:
+  branches: [ main ]
+
+pool: vmImage: 'ubuntu-latest'
+
+variables:
+  TF_VERSION: '1.5.7'
+
+steps:
+- task: UseTerraform@0
+  inputs:
+    terraformVersion: $(TF_VERSION)
+
+- checkout: self
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+
+- script: |
+    pip install --upgrade pip
+    pip install checkov checkov-report-converter
+  displayName: 'Install Checkov'
+
+- script: |
+    cd terraform
+    terraform init
+    terraform plan -out=tfplan.binary
+    terraform show -json tfplan.binary > tfplan.json
+  displayName: 'Terraform Init & Plan'
+
+- script: |
+    checkov --check-plan -f terraform/tfplan.json \
+      --output json --output-file-path terraform/checkov_plan_report.json
+  displayName: 'Run Checkov Plan Scan'
+
+- script: |
+    checkov-report-converter \
+      -i terraform/checkov_plan_report.json \
+      -o terraform/checkov_plan_report.html
+  displayName: 'Convert JSON → HTML Report'
+
+- script: |
+    python3 scripts/ai_summary.py terraform/checkov_plan_report.json
+  displayName: 'Optional: AI Summary'
+  condition: and(succeeded(), exists('scripts/ai_summary.py'))
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: terraform
+    ArtifactName: checkov-report
+    publishLocation: Container
